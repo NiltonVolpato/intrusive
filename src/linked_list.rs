@@ -286,7 +286,7 @@ mod tests {
         assert_eq!(a_links::<_, (), _>(&builder, c).next, Some(b));
     }
 
-    fn a_links<'a, B, Tag, const I: usize>(builder: &'a B, r: NodeRef<B>) -> &'a Links<B, Tag>
+    fn a_links<B, Tag, const I: usize>(builder: &B, r: NodeRef<B>) -> &Links<B, Tag>
     where
         B: NodeBuilder,
         B::Storage: HasStorage<Links<B, Tag>, I>,
