@@ -11,10 +11,7 @@ struct ArenaNodeBuilder<'a, V, S> {
 
 impl<V, S> Clone for ArenaNodeBuilder<'_, V, S> {
     fn clone(&self) -> Self {
-        Self {
-            arena: self.arena,
-            _marker: std::marker::PhantomData,
-        }
+        *self
     }
 }
 

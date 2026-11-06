@@ -57,9 +57,32 @@ pub trait NodeBuilder: Sized + Clone + Debug {
     ) -> [&mut Node<Self>; N];
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct NodeRef<B: NodeBuilder> {
     handle: B::Handle,
+}
+
+// Manual impls: the derives would incorrectly require `B: Copy`/`B: PartialEq`
+// instead of relying on the `Handle: Copy + Eq` bound from `NodeBuilder`.
+impl<B: NodeBuilder> Clone for NodeRef<B> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<B: NodeBuilder> Copy for NodeRef<B> {}
+
+impl<B: NodeBuilder> PartialEq for NodeRef<B> {
+    fn eq(&self, other: &Self) -> bool {
+        self.handle == other.handle
+    }
+}
+
+impl<B: NodeBuilder> Eq for NodeRef<B> {}
+
+impl<B: NodeBuilder> std::fmt::Debug for NodeRef<B> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("NodeRef").finish_non_exhaustive()
+    }
 }
 
 impl<B: NodeBuilder> NodeRef<B> {
@@ -100,5 +123,15 @@ impl<B: NodeBuilder> Node<B> {
     #[inline(always)]
     pub fn value_mut(&mut self) -> &mut B::Value {
         &mut self.value
+    }
+
+    #[inline(always)]
+    pub(crate) fn storage(&self) -> &B::Storage {
+        &self.storage
+    }
+
+    #[inline(always)]
+    pub(crate) fn storage_mut(&mut self) -> &mut B::Storage {
+        &mut self.storage
     }
 }
