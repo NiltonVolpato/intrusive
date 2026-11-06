@@ -2,30 +2,32 @@ use core::ptr::NonNull;
 
 use bumpalo::Bump;
 
-use crate::{Node, NodeBuilder, NodeRef, Storage};
+use crate::{Node, NodeBuilder, NodeRef, StorageAccess};
 
-struct ArenaNodeBuilder<'a, V, S> {
+/// Arena-backed node builder, generic over `L`: the marker (or tuple of
+/// markers, see `MultiStorage`) naming the memberships the nodes carry.
+pub struct ArenaNodeBuilder<'a, V, L> {
     arena: &'a Bump,
-    _marker: std::marker::PhantomData<(V, S)>,
+    _marker: std::marker::PhantomData<(V, L)>,
 }
 
-impl<V, S> Clone for ArenaNodeBuilder<'_, V, S> {
+impl<V, L> Clone for ArenaNodeBuilder<'_, V, L> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<V, S> Copy for ArenaNodeBuilder<'_, V, S> {}
+impl<V, L> Copy for ArenaNodeBuilder<'_, V, L> {}
 
-impl<'a, V, S> PartialEq for ArenaNodeBuilder<'a, V, S> {
+impl<V, L> PartialEq for ArenaNodeBuilder<'_, V, L> {
     fn eq(&self, other: &Self) -> bool {
         core::ptr::eq(self.arena, other.arena)
     }
 }
 
-impl<'a, V, S> Eq for ArenaNodeBuilder<'a, V, S> {}
+impl<V, L> Eq for ArenaNodeBuilder<'_, V, L> {}
 
-impl<'a, V, S> core::fmt::Debug for ArenaNodeBuilder<'a, V, S> {
+impl<V, L> core::fmt::Debug for ArenaNodeBuilder<'_, V, L> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("ArenaNodeBuilder")
             .field("arena", &self.arena)
@@ -33,7 +35,7 @@ impl<'a, V, S> core::fmt::Debug for ArenaNodeBuilder<'a, V, S> {
     }
 }
 
-impl<'a, V, S> ArenaNodeBuilder<'a, V, S> {
+impl<'a, V, L> ArenaNodeBuilder<'a, V, L> {
     pub fn new(arena: &'a Bump) -> Self {
         Self {
             arena,
@@ -42,12 +44,12 @@ impl<'a, V, S> ArenaNodeBuilder<'a, V, S> {
     }
 }
 
-impl<V, S> NodeBuilder for ArenaNodeBuilder<'_, V, S>
+impl<'a, V, L> NodeBuilder for ArenaNodeBuilder<'a, V, L>
 where
-    S: Storage,
+    L: StorageAccess,
 {
     type Value = V;
-    type Storage = S;
+    type Storage = L::State<Self>;
     type Handle = NonNull<Node<Self>>;
 
     fn build(&self, node: Node<Self>) -> NodeRef<Self> {

@@ -4,31 +4,26 @@ use core::fmt::Debug;
 #[cfg(feature = "bumpalo")]
 pub mod arena_node_builder;
 pub mod linked_list;
+pub mod multi_storage;
 // pub mod priority_queue;
 
 pub trait Storage: Default {
     fn is_linked(&self) -> bool;
 }
 
-// Disambiguation wrapper for identical storage types
-#[derive(Default)]
-pub struct Tagged<S, Tag> {
-    pub(crate) storage: S,
-    _marker: std::marker::PhantomData<Tag>,
-}
-
-impl<S: Storage, Tag: Default> Storage for Tagged<S, Tag> {
-    fn is_linked(&self) -> bool {
-        self.storage.is_linked()
-    }
-}
-
-pub trait HasStorage<S> {
+/// Access to the membership state `S` inside a node's storage.
+///
+/// `I` is the position of `S`: 0 when the storage is `S` itself, the tuple
+/// index inside a composite storage (see `multi_storage`). It is always
+/// inferred from `S`, so users never name it; it only exists so that the
+/// per-position impls are disjoint for coherence.
+pub trait HasStorage<S, const I: usize> {
     fn storage(&self) -> &S;
     fn storage_mut(&mut self) -> &mut S;
 }
 
-impl<S> HasStorage<S> for S
+// Disjoint from the tuple impls: overlap would need `S0 == (S0, S1)`.
+impl<S> HasStorage<S, 0> for S
 where
     S: Storage,
 {
@@ -41,6 +36,19 @@ where
     fn storage_mut(&mut self) -> &mut S {
         self
     }
+}
+
+/// Names a kind of intrusive membership (a ZST marker, e.g.
+/// `LinkedListStorage<Tag>`) and maps it to the concrete per-node state that
+/// membership contributes inside `Node::storage`.
+///
+/// The marker never mentions the builder, so generic builders can be
+/// parameterized by it (the `B`-dependent state is only reachable through
+/// this projection, never written out by the user). Extracting a marker's
+/// state back out of a (possibly composite) node storage is `HasStorage`'s
+/// job.
+pub trait StorageAccess {
+    type State<B: NodeBuilder>: Storage;
 }
 
 pub trait NodeBuilder: Sized + Clone + Debug {
