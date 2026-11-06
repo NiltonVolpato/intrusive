@@ -1,5 +1,5 @@
 [package]
-name = "priority-queue"
+name = "intrusive"
 version = "0.1.0"
 edition = "2024"
 
