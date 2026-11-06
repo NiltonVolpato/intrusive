@@ -1,4 +1,6 @@
-use crate::{DecreaseKeyError, IntrusiveNode, IntrusivePriorityQueue};
+#![allow(unused_variables)]
+
+use crate::{Error, IntrusivePriorityQueue, NodeBuilder, NodeRef};
 use core::{cell::Cell, ptr};
 
 #[derive(Debug, Default)]
@@ -19,26 +21,23 @@ impl BinaryHeapHook {
     }
 }
 
-pub struct IntrusiveBinaryHeap<'a, N> {
-    nodes: Vec<&'a N>,
+pub struct IntrusiveBinaryHeap<B: NodeBuilder> {
+    nodes: Vec<NodeRef<B>>,
 }
 
-impl<'a, N> IntrusiveBinaryHeap<'a, N> {
+impl<B: NodeBuilder> IntrusiveBinaryHeap<B> {
     pub fn new() -> Self {
         Self { nodes: Vec::new() }
     }
 }
 
-impl<'a, N> Default for IntrusiveBinaryHeap<'a, N> {
+impl<B: NodeBuilder> Default for IntrusiveBinaryHeap<B> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a, N> IntrusiveBinaryHeap<'a, N>
-where
-    N: IntrusiveNode<Hook = BinaryHeapHook>,
-{
+impl<B: NodeBuilder> IntrusiveBinaryHeap<B> {
     #[inline]
     fn swap_nodes(&mut self, i: usize, j: usize) {
         self.nodes.swap(i, j);
@@ -82,110 +81,66 @@ where
     }
 
     #[inline]
-    fn validate_membership(&self, node: &'a N) -> Result<usize, DecreaseKeyError<N::Priority>> {
-        let idx = node
-            .hook()
-            .index
-            .get()
-            .ok_or(DecreaseKeyError::NotPresent)?;
+    fn validate_membership(&self, node: NodeRef<B>) -> Result<usize, Error> {
+        let idx = node.hook().index.get().ok_or(Error::NotLinked)?;
         if idx >= self.nodes.len() || !ptr::eq(self.nodes[idx], node) {
-            return Err(DecreaseKeyError::NotPresent);
+            return Err(Error::NotLinked);
         }
         Ok(idx)
     }
 }
 
-impl<'a, N> IntrusivePriorityQueue<'a> for IntrusiveBinaryHeap<'a, N>
-where
-    N: IntrusiveNode<Hook = BinaryHeapHook>,
-{
-    type Node = N;
+impl<B: NodeBuilder> IntrusivePriorityQueue<B> for IntrusiveBinaryHeap<B> {
+    type Priority = u32;
 
-    fn push(&mut self, node: &'a N) {
-        assert!(
-            node.hook().index.get().is_none(),
-            "Cannot push an item that is already enqueued"
-        );
-
-        let idx = self.nodes.len();
-        node.hook().index.set(Some(idx));
-        self.nodes.push(node);
-        self.sift_up(idx);
+    fn push(
+        &mut self,
+        builder: &mut B,
+        node: NodeRef<B>,
+        priority: Self::Priority,
+    ) -> Result<(), Error> {
+        unimplemented!()
     }
 
-    fn peek(&self) -> Option<&'a N> {
-        self.nodes.first().copied()
+    fn peek(&self, builder: &B) -> Option<Node<B>> {
+        unimplemented!()
     }
 
-    fn pop(&mut self) -> Option<&'a N> {
-        if self.nodes.is_empty() {
-            return None;
-        }
-
-        let last_idx = self.nodes.len() - 1;
-        self.swap_nodes(0, last_idx);
-
-        let node = self.nodes.pop().unwrap();
-        node.hook().index.set(None);
-
-        if !self.nodes.is_empty() {
-            self.sift_down(0);
-        }
-
-        Some(node)
+    fn pop(&mut self, builder: &mut B) -> Option<Node<B>> {
+        unimplemented!()
     }
 
     fn decrease_key(
         &mut self,
-        node: &'a N,
-        new_priority: N::Priority,
-    ) -> Result<(), DecreaseKeyError<N::Priority>> {
-        let idx = self.validate_membership(node)?;
-        let current = node.priority();
-
-        if new_priority >= current {
-            return Err(DecreaseKeyError::NotDecreased {
-                current,
-                attempted: new_priority,
-            });
-        }
-
-        node.set_priority(new_priority);
-        self.sift_up(idx);
-        Ok(())
+        builder: &mut B,
+        node: NodeRef<B>,
+        priority: Self::Priority,
+    ) -> Result<(), Error> {
+        unimplemented!()
     }
 
-    fn remove(&mut self, node: &'a N) -> Result<(), DecreaseKeyError<N::Priority>> {
-        let idx = self.validate_membership(node)?;
-        let last_idx = self.nodes.len() - 1;
+    fn push_or_decrease_key(
+        &mut self,
+        builder: &mut B,
+        node: NodeRef<B>,
+        priority: Self::Priority,
+    ) -> Result<bool, Error> {
+        unimplemented!()
+    }
 
-        if idx != last_idx {
-            self.swap_nodes(idx, last_idx);
-        }
-
-        let removed = self.nodes.pop().unwrap();
-        removed.hook().index.set(None);
-
-        if idx < self.nodes.len() {
-            let parent = (idx.saturating_sub(1)) / 2;
-            if idx > 0 && self.nodes[idx].priority() < self.nodes[parent].priority() {
-                self.sift_up(idx);
-            } else {
-                self.sift_down(idx);
-            }
-        }
-
-        Ok(())
+    fn remove(&mut self, builder: &mut B, node: NodeRef<B>) -> Result<NodeRef<B>, Error> {
+        unimplemented!()
     }
 
     fn len(&self) -> usize {
         self.nodes.len()
     }
 
-    fn clear(&mut self) {
-        for node in &self.nodes {
-            node.hook().index.set(None);
-        }
-        self.nodes.clear();
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    fn clear(&mut self, builder: &mut B) {
+        unimplemented!()
     }
 }

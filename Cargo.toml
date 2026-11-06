@@ -4,3 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+bumpalo = { version = "3.20.3", optional = true }
+
+[features]
+default = ["bumpalo"]
+bumpalo = ["dep:bumpalo"]
