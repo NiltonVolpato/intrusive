@@ -2,7 +2,7 @@ use core::ptr::NonNull;
 
 use bumpalo::Bump;
 
-use crate::{Node, NodeBuilder, NodeRef, StorageAccess};
+use crate::core::{Node, NodeBuilder, NodeRef, StorageAccess};
 
 /// Arena-backed node builder, generic over `L`: the marker (or tuple of
 /// markers, see `MultiStorage`) naming the memberships the nodes carry.

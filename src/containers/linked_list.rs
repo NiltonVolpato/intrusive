@@ -1,11 +1,10 @@
-// Concrete doubly-linked storage (Zero Cell, plain Option)
-use crate::{HasStorage, NodeBuilder, NodeRef, Storage, StorageAccess};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Error {
-    AlreadyLinked,
-    NotLinked,
-}
+//! A circular doubly-linked list.
+//!
+//! [`LinkedListStorage`] is the membership marker (tagged, so one node can be
+//! in several lists at once via a tuple of markers), [`Links`] is the
+//! per-node state, and [`LinkedList`] is the container.
+use crate::Error;
+use crate::core::{HasStorage, NodeBuilder, NodeRef, Storage, StorageAccess};
 
 /// Marker naming doubly-linked-list membership. `Tag` disambiguates when the
 /// same node participates in multiple lists (e.g. an LRU list and a free
@@ -184,8 +183,8 @@ mod tests {
     use bumpalo::Bump;
 
     use super::*;
-    use crate::Node;
-    use crate::arena_node_builder::ArenaNodeBuilder;
+    use crate::ArenaNodeBuilder;
+    use crate::core::Node;
 
     type Builder<'a, M> = ArenaNodeBuilder<'a, u32, M>;
 

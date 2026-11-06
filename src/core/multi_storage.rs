@@ -5,7 +5,7 @@
 //! of the member states. `HasStorage` finds a member by its tuple index,
 //! which is inferred from the requested state type; this is unambiguous as
 //! long as the member states are distinct types (e.g. different tags).
-use crate::{HasStorage, NodeBuilder, Storage, StorageAccess};
+use crate::core::{HasStorage, NodeBuilder, Storage, StorageAccess};
 
 macro_rules! tuple_storage {
     ($($M:ident $S:ident $i:tt),+) => {
